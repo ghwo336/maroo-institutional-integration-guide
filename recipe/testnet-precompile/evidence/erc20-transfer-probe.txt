@@ -1,0 +1,8 @@
+experiment: ERC-20 transfer(to, 1 tOKRW) call to 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE
+from: 0x552B9F6BA65DE19D93F568DEF894d5Efdc1E6866  to: 0x482F915080Dd5Ea014347cC11aE907e9e15BAe1E
+to balance before: 100.0
+estimateGas: 22580
+tx hash: 0x5906df5b49c3cbf43e08087f115b15f2efe5e27ca177251ef92e516499738616
+status: 1  gasUsed: 21632  logs: 0  block: 17122333
+to balance after : 100.0
+delta: 0.0
