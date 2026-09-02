@@ -1,0 +1,37 @@
+{
+  "source": "audit_encrypted",
+  "tx_hash": "7A906A9709E3B5B9917B42DB0501713F4547861E61B963246A0C2C0EFC1A128D",
+  "verification": {
+    "verified": true,
+    "local_disclosure_digest_match": true,
+    "on_chain_disclosure_digest_used": true,
+    "on_chain_disclosure_digest_match": true
+  },
+  "summary": {
+    "plane": "audit",
+    "delivery": "audit-encrypted",
+    "policy": "audit-full",
+    "disclosed_fields": [
+      "amount",
+      "from_shielded_address",
+      "to_shielded_address"
+    ],
+    "amount": "11",
+    "asset_id_hex": "238d5f23e4d918d40b0982ce3aef16a75c4d1760193d1c3b30b9f5df681903ca",
+    "from_shielded_address": "clairs1t4kcjd0s4qmvenattlphcsmtgn3q4hhq4l6dwwgrguw3njqzc5nw3whzx28gg7des8u2xm940ap2meh4mgp88v272cktuu828rquy2sff86x5",
+    "to_shielded_address": "clairs1lu65xvvhuh4qa28v6zqxd22rvrq3435urvpjee7jrtj5ypgcvjqqfszt4sd9psjyhtmk0c62qzkcg9ah2j60dt3vd645v0cedgg8g8gzlcnfw"
+  },
+  "payload": {
+    "version": "privacy-fixed-v1",
+    "plane": "audit",
+    "policy": 7,
+    "output_index": 0,
+    "commitment_hex": "1673a9b1afc96b695852f4dd93771290c96dad9782c734b8ee537c9fcd351415",
+    "disclosure_digest_hex": "10772e88eef36ad5a3b7081fac0366fe626ebc4082dd4248d85cae472c91dcdb",
+    "disclosure_blinding_hex": "00b4d3a26b00f59f2f24bf2f790e0626b0cdb311d2c47b546ec0a861e97ec1ba",
+    "amount": "11",
+    "asset_id_hex": "238d5f23e4d918d40b0982ce3aef16a75c4d1760193d1c3b30b9f5df681903ca",
+    "from_shielded_address": "clairs1t4kcjd0s4qmvenattlphcsmtgn3q4hhq4l6dwwgrguw3njqzc5nw3whzx28gg7des8u2xm940ap2meh4mgp88v272cktuu828rquy2sff86x5",
+    "to_shielded_address": "clairs1lu65xvvhuh4qa28v6zqxd22rvrq3435urvpjee7jrtj5ypgcvjqqfszt4sd9psjyhtmk0c62qzkcg9ah2j60dt3vd645v0cedgg8g8gzlcnfw"
+  }
+}
