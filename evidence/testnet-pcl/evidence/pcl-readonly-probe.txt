@@ -1,0 +1,76 @@
+# PCL 읽기 전용 검증 (테스트넷)  date: 2026-09-03
+rpc: https://rpc-testnet.maroo.io  chainId: 450815  block: 17174161
+proxy: 0x5BCEc33cf3f6496dAF27956fd4C4f157ca0342E3  impl: 0x805F34f3Fa7211A491Bd62a0468b23C786b7AA17
+attested: 0x552B9F6BA65DE19D93F568DEF894d5Efdc1E6866  unattested(random): 0xE9248D70055925e42957Dcdf1A42c7E856cc6aFB
+
+1. [프리컴파일 생존 확인] eth_getCode는 비어 있어도 호출에는 답한다
+  eth_getCode(PCL): 0x
+  policyAdmin(): 0x58eC1E718ff15e5f34591747D47ADf5BccDA804F
+  getParams(): policyAdmin=0x58eC1E718ff15e5f34591747D47ADf5BccDA804F entrypoints=["0x4337084D9E255Ff0702461CF8895CE9E3b5Ff108"]
+  알 수 없는 selector 0xdeadbeef: REVERT  Error(no method with id: 0xdeadbeef)
+
+2. [등록된 템플릿] policyTemplate(id)
+  EAS_POLICY: EAS policy
+  DENYLIST_POLICY: Denylist
+  VOLUME_POLICY: Volume policy
+  PERIODIC_VOLUME_POLICY: Periodic volume policy
+  OKRW_EAS_TRANSFER_LIMIT_POLICY: OKRW EAS transfer limit policy
+  OKRW_EAS_PERIODIC_VOLUME_LIMIT_POLICY: OKRW EAS periodic volume limit policy
+  AGENT_OKRW_TRANSFER_LIMIT_POLICY: Agent OKRW transfer limit policy
+  LOGICAL_POLICY: Logical policy
+  FOR_EACH_POLICY: For each policy
+  NOT_A_TEMPLATE: REVERT PolicyTemplateNotFound(NOT_A_TEMPLATE)
+
+3. [전역 정책] globalPolicies() 디코드. 모든 tx에 AnteHandler가 적용
+  [0]
+    FOR_EACH_POLICY Every subject=AgentOwners selector=(모든 호출)
+      LOGICAL_POLICY Or selector=(모든 호출)
+        PERIODIC_VOLUME_POLICY tokens=["atokrw"] 누적 max 10000000.0 tOKRW / 86400s selector=(모든 호출)
+        EAS_POLICY eas=0x1000000000000000000000000000000000000007 indexer=0x1000000000000000000000000000000000000008 schemaUid=0x3e448d939524a8f3e6a403502e57ce60ee10146292114a58f4bfd1b1d35f527d selector=(모든 호출)
+  [1]
+    LOGICAL_POLICY Or selector=(모든 호출)
+      VOLUME_POLICY tokens=["atokrw"] 단건 min 0.0 tOKRW max 2000000.0 tOKRW selector=(모든 호출)
+      EAS_POLICY eas=0x1000000000000000000000000000000000000007 indexer=0x1000000000000000000000000000000000000008 schemaUid=0x3e448d939524a8f3e6a403502e57ce60ee10146292114a58f4bfd1b1d35f527d selector=(모든 호출)
+      FOR_EACH_POLICY Any subject=AgentOwners selector=(모든 호출)
+        EAS_POLICY eas=0x1000000000000000000000000000000000000007 indexer=0x1000000000000000000000000000000000000008 schemaUid=0x3e448d939524a8f3e6a403502e57ce60ee10146292114a58f4bfd1b1d35f527d selector=(모든 호출)
+  스키마 0x3e448d939524a8f3e6a403502e57ce60ee10146292114a58f4bfd1b1d35f527d: "bytes32 kakaoIdHash, uint8 version" resolver=0x6D2cBcFEeB6B6752C76D7eeB1cb4aD69aae58D6f revocable=true
+  globalPeriodicVolume(attested, "atokrw", 86400): amount=0.0 tOKRW max=10000000.0 tOKRW resetAt=1788480000
+  globalOkrwEasPeriodicVolume(attested): ["0","0","0","0"]  (OKRW_EAS 변형 미등록이라 0)
+
+4. [프록시 레지스트리와 컨트랙트 정책]
+  pclProxy(proxy).kind = 1 (1=Transparent)   pclProxy(impl).kind = 0 (0=미등록)
+  eth_getCode 길이: proxy 3218 bytes, impl 2887 bytes
+  contractPolicies(proxy): admin=0x552B9F6BA65DE19D93F568DEF894d5Efdc1E6866
+    EAS_POLICY eas=0x1000000000000000000000000000000000000007 indexer=0x1000000000000000000000000000000000000008 schemaUid=0xc74ecef5301b91fbff53451f7e66cafd41871e4f02e3c38766b9d8139f641a63 selector=(모든 호출)
+  Indexer 색인 수: attested=1  unattested=0  (스키마 0xc74ecef5...)
+
+5. [규제 트랙 시뮬레이션] 프록시로 eth_call. from에 따라 결과가 갈린다
+  transfer  from=unattested: REVERT  EasNoAttestationReceived(0xE9248D70055925e42957Dcdf1A42c7E856cc6aFB)
+  transfer  from=attested  : OK  return=0x0000000000000000000000000000000000000000000000000000000000000001
+  transfer  from 생략       : REVERT  EasNoAttestationReceived(0x0000000000000000000000000000000000000000)
+  estimateGas transfer from=attested: 625750
+
+6. [view도 정책 대상] selector 없이 바인딩하면 읽기 호출도 막힌다
+  name()      from=unattested: REVERT  EasNoAttestationReceived(0xE9248D70055925e42957Dcdf1A42c7E856cc6aFB)
+  name()      from=attested  : OK  return=0x0000000000000000000000000000000000000000000000000000000000000020...
+  balanceOf() from 생략       : REVERT  EasNoAttestationReceived(0x0000000000000000000000000000000000000000)
+
+7. [대조군: 개방 트랙] 구현 컨트랙트 직접 호출. PCL 에러가 아니라 토큰 자체 에러만 나온다
+  impl.transfer from=unattested: REVERT  ERC20InsufficientBalance(0xE9248D70055925e42957Dcdf1A42c7E856cc6aFB, 0, 1000000000000000000)
+  impl.name()   from=unattested: OK  return=0x0000000000000000000000000000000000000000000000000000000000000020...
+
+8. [훅 직접 호출] EOA가 preCall을 부르면
+  PCL.preCall(proxy, attested, 0x, 0) from=attested: REVERT  Unauthorized()
+
+9. [정책 쓰기 경로의 에러] changeContractPolicies eth_call
+  proxy, from=비admin, 유효한 EAS_POLICY       : REVERT  Unauthorized()
+  impl(프록시 아님, 미바인딩), from=임의 주소   : REVERT  ContractPolicyNotRegistered(0x805F34f3Fa7211A491Bd62a0468b23C786b7AA17)
+  proxy, from=admin, 없는 templateId          : REVERT  UnknownPolicyType(NOT_A_TEMPLATE)
+  proxy, from=admin, selector 3바이트          : REVERT  InvalidSelector(0x613930353963)
+  proxy, from=admin, selector=transfer 4바이트 : OK  return=0x
+
+10. [전역 정책은 eth_call에 없다] 잔고 state override로 임의 주소가 네이티브 전송
+  native 1 tOKRW from=임의 주소(override 잔고 3천만): OK  return=0x
+  native 2000001 tOKRW from=임의 주소(override 잔고 3천만): OK  return=0x
+  native 20000000 tOKRW from=임의 주소(override 잔고 3천만): OK  return=0x
+  estimateGas native 3,000,000 tOKRW from=임의 주소(override): 21000

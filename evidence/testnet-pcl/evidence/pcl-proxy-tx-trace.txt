@@ -1,0 +1,44 @@
+# PCL 프록시 실제 tx 추적  date: 2026-09-03  (tx 실행일 2026-08-22)
+
+## 0x3e696cd403788ede0af895c12a13d188fef5fdda34dc2e3ea36ef9c594d446dd
+   attestation 색인 전, gasLimit 500,000
+   status=0 gasUsed=250000 gasLimit=500000 gasUsed/gasLimit=0.500 logs=0 block=16156642
+   CALL proxy transfer gasUsed=0 ERR=execution reverted EasNoAttestationReceived(0x552B9F6BA65DE19D93F568DEF894d5Efdc1E6866)
+     CALL PCL preCall gasUsed=73033 ERR=execution reverted EasNoAttestationReceived(0x552B9F6BA65DE19D93F568DEF894d5Efdc1E6866)
+
+## 0xec5c27b7a9c217cfcae2c42116975c4e7993392807a779aa7e8774b1789d771a
+   attestation 색인 후, gasLimit 500,000
+   status=0 gasUsed=497593 gasLimit=500000 gasUsed/gasLimit=0.995 logs=0 block=16158138
+   CALL proxy transfer gasUsed=0 ERR=execution reverted
+     CALL PCL preCall gasUsed=281696
+     DELEGATECALL impl transfer gasUsed=29993
+     CALL PCL postCall gasUsed=153942 ERR=out of gas
+
+## 0x18dfa4d21f834a5da5ac3a79103eb86361c1df497fe1ba9bfd5dcccc3401d045
+   attestation 색인 후, gasLimit 500,000 (재시도)
+   status=0 gasUsed=497593 gasLimit=500000 gasUsed/gasLimit=0.995 logs=0 block=16158270
+   CALL proxy transfer gasUsed=0 ERR=execution reverted
+     CALL PCL preCall gasUsed=281696
+     DELEGATECALL impl transfer gasUsed=29993
+     CALL PCL postCall gasUsed=153942 ERR=out of gas
+
+## 0xc2dd4f31efbbe67648ee1ab3b2c0fa667bfd9240d967f4e5c49b57c3f186944c
+   attestation 색인 후, gasLimit 1,500,000
+   status=1 gasUsed=750000 gasLimit=1500000 gasUsed/gasLimit=0.500 logs=2 block=16158703
+   CALL proxy transfer gasUsed=750000
+     CALL PCL preCall gasUsed=281696
+     DELEGATECALL impl transfer gasUsed=29993
+     CALL PCL postCall gasUsed=287583
+
+## gasUsed가 gasLimit의 정확히 절반으로 기록되는 현상: 익스플로러 최근 검증 tx 표본
+   0x0f500c3978ca73b85bca30cb62615630d5235aa498379afb35e8f3b60f189460 used=7500000 limit=15000000
+   0x2f4801ef90bd097f96fb9c6fb33afd54296bead92a2a8fa77b349b3c337ee76a used=1750000 limit=3500000
+   0xeef57e1c35e0bf15cf46258aa8fd5f68baf9589bba395dfe1849d5a292e55f50 used=1750000 limit=3500000
+   0x3839c31d1b5625bd59b5251f6595b3e50ffb451aab93389fdbc488f30ee3899b used=1750000 limit=3500000
+   0x33c7e337fa20ddddb7f4a3aa0b9641f6a56c3e2418ca4f0dc1eac56ee03b0d2b used=100000 limit=200000
+   0xad93701d6e24f5c8610cab710a7fbec6aac0b938be901515aff5ef2ece62a03a used=7500000 limit=15000000
+   0xfa934a0ac6820f0fa09e7ab19baa2fea1ebb27e8495807fd90afaf38f30f7a71 used=7500000 limit=15000000
+   0x5626939d02b1c579acc057b2cd209e515545791442840b34c4458dffbd642b24 used=7500000 limit=15000000
+   0xf4d1d4449f6c66440df92c883a4692c296dec92f2a4e98b4ae6956b56655031c used=7500000 limit=15000000
+   0xcfb14484c7c8a8cad2bb9b419bff48335499a5aba1a47b565eb13a827e126e4e used=7500000 limit=15000000
+   표본 50건 중 정확히 절반 10건
