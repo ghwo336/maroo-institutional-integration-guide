@@ -119,24 +119,24 @@ flowchart TB
 급여 지급 과정은 여섯 단계다. 직원 신원 확인, 기업의 자금 예치, 비공개 일괄 지급, 직원의 수령 확인, 출금, 감사 순서다. 배당이나 정산 지급도 수취인 목록과 재원의 출처만 다를 뿐 이 여섯 단계가 같다.
 
 ```mermaid
-%%{init: {'theme': 'dark'}}%%
+%%{init: {'theme': 'dark', 'sequence': {'actorMargin': 140, 'width': 130, 'messageMargin': 40, 'noteMargin': 12}}}%%
 sequenceDiagram
   participant EMP as 직원
-  participant CORP as 기업
   participant BANK as 은행
   participant CHAIN as Maroo L1
+  participant CORP as 기업
   participant AUD as 감사자
 
   EMP->>BANK: 1. 신원 확인 (KYC)
-  BANK->>CHAIN: attestation 발급 · 급여 컨트랙트 정책 설정
-  CORP->>CHAIN: 2. 급여 총액 예치 (OKRW, 금액 공개, 한도 검사)
-  CORP->>CHAIN: 3. 직원 N명 일괄 지급 (금액 은닉, 트랜잭션 1건)
-  CHAIN-->>CORP: 영수증 + 기업용 암호화 사본, 급여 대장과 대사
-  EMP->>CHAIN: 4. 노트 스캔, 내 급여 확인
+  BANK->>CHAIN: attestation 발급<br/>급여 컨트랙트 정책 설정
+  CORP->>CHAIN: 2. 급여 총액 예치<br/>(OKRW, 금액 공개, 한도 검사)
+  CORP->>CHAIN: 3. 직원 N명 일괄 지급<br/>(금액 은닉, 트랜잭션 1건)
+  CHAIN-->>CORP: 영수증 + 기업용 암호화 사본<br/>급여 대장과 대사
+  Note over EMP,CHAIN: 4. 직원이 노트를 스캔해 자기 급여를 확인
   EMP->>BANK: 5. 출금 서명 전달 (EIP-712)
   BANK->>CHAIN: 출금 실행, 가스는 은행이 지불
-  CHAIN-->>EMP: 공개 잔고로 OKRW 입금
-  AUD->>CHAIN: 6. 감사 사본 수집, 감사 키로 복호화
+  CHAIN-->>BANK: 직원 공개 잔고에 OKRW 입금
+  Note over CHAIN,AUD: 6. 감사자가 감사 사본을 수집해 감사 키로 복호화
 ```
 
 2, 3, 4, 6단계는 로컬 Clairveil에서 직접 실행했고, 1단계와 5단계는 마루 문서를 근거로 구성한 제안이다. 프리컴파일 단위의 상세 시퀀스는 [docs/diagrams/privacy-sequence.md](diagrams/privacy-sequence.md)에 있다.
