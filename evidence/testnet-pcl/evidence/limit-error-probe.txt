@@ -1,0 +1,20 @@
+# 한도 초과 에러 이름 실측 (과거 블록 eth_call)  date: 2026-09-04  rpc: https://rpc-testnet.maroo.io
+proxy: 0x65Ba55397D329D39A632F789d5A2C3E87c6dB88e  미인증 임의 주소: 0xfE91Af2f3AB1A240421bb2998966fB2cC44FFcFf (잔고는 state override)
+latest block: 17266191
+
+## block 17217688 (2026-09-03T17:43:08.000Z)
+   contractPolicies(proxy): OKRW_EAS_TRANSFER_LIMIT_POLICY@0x  (기대: OKRW_EAS_TRANSFER_LIMIT_POLICY)
+   미인증 value 999 tOKRW: REVERT revert data 없음
+      frames: CALL PCL sel=0x43d1bbb2 | DELEGATECALL 0xbf204586 sel=0x ERR=execution reverted | CALL PCL sel=0xe4fd3acd
+   미인증 value 1001 tOKRW: REVERT ReachedLimitOfNonEAS(1000000000000000000000, 1001000000000000000000)
+      frames: CALL PCL sel=0x43d1bbb2 ERR=execution reverted
+
+## block 17217690 (2026-09-03T17:43:10.000Z)
+   contractPolicies(proxy): OKRW_EAS_PERIODIC_VOLUME_LIMIT_POLICY@0x  (기대: OKRW_EAS_PERIODIC_VOLUME_LIMIT_POLICY)
+   미인증 value 9999 tOKRW: REVERT revert data 없음
+      frames: CALL PCL sel=0x43d1bbb2 | DELEGATECALL 0xbf204586 sel=0x ERR=execution reverted | CALL PCL sel=0xe4fd3acd
+   미인증 value 10001 tOKRW: REVERT ExceededPeriodicVolume(10000000000000000000000, 10001000000000000000000, 1788480000)
+      frames: CALL PCL sel=0x43d1bbb2 ERR=execution reverted
+
+읽는 법: 한도 아래 금액이 revert data 없이 되돌려지는 것은 preCall을 지난 뒤 구현 컨트랙트가 빈 calldata를 받지 않아서다(delegatecall 프레임에 ERR).
+한도 위 금액은 preCall 프레임에서 되돌려지고 revert data에 IPcl 커스텀 에러가 실린다. 전역 정책은 eth_call이 평가하지 않으므로 여기 값은 컨트랙트 정책만의 결과다.
