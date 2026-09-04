@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawnSync } from "node:child_process";
 import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -20,12 +20,34 @@ const requestedStep = process.argv[2] ?? "all";
 
 mkdirSync(out, { recursive: true });
 
+// clairveild의 stderr(gnark 로그, rescan 진행 줄)는 성공 시 숨기고 실패 시에만 보여준다.
+// 증명 시간은 stderr의 "prover done" 줄에서 뽑아 한 줄로 요약한다.
+let lastStderr = "";
 function command(args: string[], captureJson = true): any {
-  const stdout = execFileSync(binary, [...args, "--home", home], {
+  const result = spawnSync(binary, [...args, "--home", home], {
     encoding: "utf8",
-    stdio: ["inherit", "pipe", "inherit"],
+    stdio: ["inherit", "pipe", "pipe"],
+    maxBuffer: 64 * 1024 * 1024,
   });
-  return captureJson ? JSON.parse(stdout) : stdout.trim();
+  lastStderr = result.stderr ?? "";
+  if (result.status !== 0) {
+    process.stderr.write(lastStderr);
+    throw new Error(`clairveild 실패: ${args.slice(0, 3).join(" ")}`);
+  }
+  return captureJson ? JSON.parse(result.stdout) : result.stdout.trim();
+}
+
+function proverSummary(): string {
+  const matches = [...lastStderr.matchAll(/"nbConstraints":(\d+)[^\n]*?"took":([\d.]+)[^\n]*?"message":"prover done"/g)];
+  const last = matches.pop();
+  if (!last) return "";
+  const ms = Number(last[2]);
+  const took = ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${Math.round(ms)}ms`;
+  return `증명 ${Number(last[1]).toLocaleString()} constraints, ${took}`;
+}
+
+function short(txHash: string): string {
+  return `${txHash.slice(0, 4)}…${txHash.slice(-4)}`;
 }
 
 function save(name: string, value: unknown): void {
@@ -80,6 +102,7 @@ function step1(): void {
     "--node", node, "--gas", "2500000", "--gas-prices", gasPrices,
     "--yes", "--output", "json",
   ]);
+  const prover = proverSummary();
   const receipt = waitForTx(hash(response));
   if (Number(receipt.code) !== 0) throw new Error(receipt.raw_log);
   const after = command([
@@ -93,7 +116,9 @@ function step1(): void {
   save("ts-1-deposit.json", response);
   save("ts-1-receipt.json", receipt);
   save("ts-state.json", { depositTxHash: hash(response), inputIndex: note.index });
-  console.log(`   tx ${hash(response)}, gas ${receipt.gas_used}, note index ${note.index}`);
+  console.log(`   alice가 ${depositAmount}${denom}를 비공개 풀에 예치. 금액은 공개`);
+  if (prover) console.log(`   ${prover}`);
+  console.log(`   tx ${short(hash(response))}, gas ${receipt.gas_used}\n`);
 }
 
 function step2(): void {
@@ -128,6 +153,7 @@ function step2(): void {
     "--node", node, "--gas", "80000000", "--gas-prices", gasPrices,
     "--yes", "--output", "json",
   ]);
+  const prover = proverSummary();
   chmodSync(prepared, 0o600);
   chmodSync(proof, 0o600);
   const receipt = waitForTx(hash(response));
@@ -135,7 +161,17 @@ function step2(): void {
   save("ts-2-batch.json", response);
   save("ts-2-receipt.json", receipt);
   save("ts-state.json", { ...state, batchTxHash: hash(response) });
-  console.log(`   tx ${hash(response)}, gas ${receipt.gas_used}, MsgBatchTransfer 1개`);
+
+  // 체인에 남은 것: 이벤트의 입출력 개수와, 출력 구조에 금액 필드가 있는지
+  const attrs: any[] = (receipt.events ?? receipt.tx_response?.events ?? []).flatMap((e: any) => e.attributes ?? []);
+  const attr = (key: string) => attrs.find((a: any) => a.key === key)?.value;
+  const outputs: any[] = (receipt.tx ?? receipt.tx_response?.tx)?.body?.messages?.[0]?.outputs ?? [];
+  const hasAmount = outputs.some((o) => Object.keys(o).some((k) => /amount|value/i.test(k)));
+  const payroll = employees.map((name, i) => `${name} ${salaries[i]}`).join(", ");
+  console.log(`   ${payroll}, 거스름돈 ${depositAmount - total}. 입력 노트 1개를 출력 노트 ${employees.length + 1}개로 분할`);
+  if (prover) console.log(`   ${prover}`);
+  console.log(`   tx ${short(hash(response))}, gas ${receipt.gas_used}, MsgBatchTransfer 1개`);
+  console.log(`   체인 이벤트: input_count=${attr("input_count") ?? "?"}, output_count=${attr("output_count") ?? "?"}. 출력 ${outputs.length}개에 금액 필드 ${hasAmount ? "있음" : "없음"}, commitment와 암호화 사본만 기록\n`);
 }
 
 function step3(): void {
@@ -148,7 +184,7 @@ function step3(): void {
   const note = notes.notes.find((item: any) => item.tx_hash === state.batchTxHash.toLowerCase());
   if (!note) throw new Error("bob의 급여 노트를 찾지 못했다");
   save("ts-3-bob-notes.json", notes);
-  console.log(`   bob ${note.amount}${denom}, ${note.status}`);
+  console.log(`   bob이 view 키로 이벤트를 스캔해 자기 노트 발견: ${note.amount}${denom}, ${note.status}. 체인에는 흔적이 남지 않음\n`);
 }
 
 function step4(): void {
@@ -171,7 +207,8 @@ function step4(): void {
   save("ts-4-prepare.json", prepared);
   save("ts-4-relay.json", response);
   save("ts-4-receipt.json", receipt);
-  console.log(`   tx ${hash(response)}, gas ${receipt.gas_used}, submitter relayer`);
+  console.log(`   bob이 출금 증명과 서명을 만들고, relayer가 제출하고 가스를 냄. 공개 수령 주소 ${recipient.slice(0, 12)}…`);
+  console.log(`   tx ${short(hash(response))}, gas ${receipt.gas_used}, submitter relayer\n`);
 }
 
 function decodePlane(hex: string, plane: string, key: string): any {
@@ -214,16 +251,22 @@ function step5(): void {
   save("ts-5-audit-report.json", { tx_hash: txHash, key: "auditor", outputs: audit });
   save("ts-6-self-view-report.json", { tx_hash: txHash, key: "alice", outputs: selfView });
   save("ts-6-recipient-report.json", { tx_hash: txHash, key: "bob", outputs: recipient });
-  const line = (rows: any[]) => rows.map((r) => `${r.status}${r.amount ? ` ${r.amount}${denom}` : ""}`).join(", ");
-  console.log(`   감사자 audit 사본: ${line(audit)}`);
-  console.log(`   기업 self-view 사본: ${line(selfView)}`);
-  console.log(`   직원 bob recipient 사본: ${line(recipient)}`);
+  // 누가 무엇을 보는가. 출력 0~N 각각을 세 키로 풀어본 결과
+  const cell = (r: any) => (r.status === "Verified" ? `Verified ${r.amount}` : r.status).padEnd(16);
+  const header = ["출력", ...audit.map((_, i) => String(i))].map((h, i) => (i === 0 ? h.padEnd(14) : h.padEnd(16))).join("");
+  const row = (label: string, rows: any[]) => `   ${label.padEnd(14 - (label.match(/[가-힣]/g)?.length ?? 0))}${rows.map(cell).join("")}`;
+  console.log("   누가 무엇을 보는가 (단위 " + denom + ")");
+  console.log(`   ${header}`);
+  console.log(row("감사자", audit));
+  console.log(row("기업 alice", selfView));
+  console.log(row("직원 bob", recipient));
   const first = [audit[0], selfView[0], recipient[0]];
   if (first.some((r) => r.status !== "Verified")) throw new Error("출력 0의 세 사본 중 복호화되지 않은 것이 있다");
   if (new Set(first.map((r) => `${r.amount}|${r.sender}|${r.recipient}`)).size !== 1) throw new Error("출력 0의 감사, self-view, recipient 복호화 결과가 서로 다르다");
   if (Number(first[0].amount) !== salaries[0]) throw new Error(`출력 0 금액 ${first[0].amount} 이 급여 대장 ${salaries[0]} 과 다르다`);
-  console.log(`   출력 0: 세 키 모두 같은 송신자, 수신자, 금액 ${first[0].amount}${denom} 복원. 급여 대장과 일치`);
-  console.log("   출력 1 이상: v0.4.0 CLI가 digest를 재계산하지 못해 검증 불가. 네 출력 전부의 복호화 결과는 evidence/local-privacy/evidence/recipe-5, recipe-6 JSON 참조");
+  console.log(`\n   출력 0: 감사자, 기업, bob 세 키가 같은 송신자, 수신자, 금액 ${first[0].amount}${denom}을 복원. 급여 대장과 일치`);
+  console.log("   bob은 자기 출력만 열리고 나머지는 NotPresent. 다른 직원 급여는 볼 수 없음");
+  console.log("   CliUnsupported: v0.4.0 CLI는 출력 0만 digest를 재계산. 네 출력 전부의 복호화는 evidence/local-privacy/evidence/recipe-5, recipe-6 JSON 참조");
 }
 
 const steps: Record<string, () => void> = { "1": step1, "2": step2, "3": step3, "4": step4, "5": step5 };

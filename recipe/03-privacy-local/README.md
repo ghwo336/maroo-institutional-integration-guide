@@ -33,9 +33,10 @@ source ~/.clairveil/clairveil.env
 clairveild start --home ~/.clairveil
 ```
 
-`~/.clairveil/clairveil.env`에는 deposit, spend, joinsplit, batch joinsplit artifact의 SHA256이 있어야 한다. `CLAIRVEIL_PRIVACY_ZK_PREFLIGHT_MODE=strict`도 확인한다. 다른 터미널에서 recipe를 실행한다.
+`~/.clairveil/clairveil.env`에는 deposit, spend, joinsplit, batch joinsplit artifact의 SHA256이 있어야 한다. `CLAIRVEIL_PRIVACY_ZK_PREFLIGHT_MODE=strict`도 확인한다. 다른 터미널에서 recipe를 실행한다. 이 터미널에서도 `clairveil.env`를 먼저 읽어야 한다. `deposit`과 `transfer-batch-16x32`는 클라이언트에서 증명을 만들 때 `CLAIRVEIL_PRIVACY_ZK_ARTIFACT_DIR`를 읽으며, 없으면 현재 디렉터리에서 `privacy_zk_manifest.json`을 찾다가 실패한다.
 
 ```bash
+source ~/.clairveil/clairveil.env
 node recipe/03-privacy-local/privacy-payroll.ts
 node recipe/03-privacy-local/privacy-payroll.ts 2
 ```
@@ -97,6 +98,7 @@ node recipe/03-privacy-local/privacy-payroll.ts 2
 | 증상 | 원인 | 조치 |
 | --- | --- | --- |
 | artifact checksum mismatch | 바이너리, genesis, artifact 버전이 다름 | commit을 확인하고 `scripts/init-localnet.sh`를 다시 실행한다. `~/.clairveil/clairveil.env`를 다시 읽는다 |
+| `privacy_zk_manifest.json: no such file or directory` | recipe 터미널에서 `clairveil.env`를 읽지 않아 artifact 경로를 모름 | 같은 터미널에서 `source ~/.clairveil/clairveil.env` 후 다시 실행한다 |
 | RPC 또는 gRPC 연결 거절 | 노드가 실행되지 않음 | `source ~/.clairveil/clairveil.env` 후 `clairveild start --home ~/.clairveil`를 실행한다 |
 | insufficient funds | 공개 잔고가 급여와 수수료보다 적음 | localnet을 다시 초기화하거나 금액을 줄인다 |
 | 1단계 deposit 노트를 찾지 못했다 | 단계 파일이 없거나 다른 홈을 사용함 | 같은 `CLAIRVEIL_HOME`으로 1단계를 다시 실행한다 |
