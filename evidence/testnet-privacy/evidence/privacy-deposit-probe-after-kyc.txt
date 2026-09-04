@@ -1,35 +1,50 @@
 # Privacy 프리컴파일 상태 변경 호출 시도 (테스트넷, 더미 인자)  date: 2026-09-04
-rpc: https://rpc-testnet.maroo.io  chainId: 450815  block: 17261033
+rpc: https://rpc-testnet.maroo.io  chainId: 450815  block: 17286881
 privacy: 0x100000000000000000000000000000000000000b  eth_getCode: 0x
 
 1. [대조군] 모르는 selector. 프리컴파일이면 revert로 답한다
   0xdeadbeef from=attested: REVERT Error(no method with id: 0xdeadbeef)
 
 2. deposit(더미 commitment, 더미 노트, 더미 proof) value=1 tOKRW
-  from=attested(은행 스키마): REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
+  from=attested(KYC 지갑): REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
   from=minter: REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
   from=임의 주소(잔고 override): REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
-  from=attested(은행 스키마): estimateGas REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
+  from=attested(KYC 지갑): estimateGas REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
 
 2b. deposit(canonical commitment 0x00…01, 더미 노트, 더미 proof) value=1 tOKRW. 입력 검증을 지나면 어느 단계가 거절하는가
-  from=attested(은행 스키마): REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
+  from=attested(KYC 지갑): REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
   from=임의 주소(잔고 override): REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
   from=임의 주소, value=0: REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
-  from=attested(은행 스키마): estimateGas REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
+  from=attested(KYC 지갑): estimateGas REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
 
 3. deposit 인자 비움 (commitment, 노트, proof 모두 0x)
-  from=attested(은행 스키마): REVERT Error(note commitment must be exactly 32 bytes: invalid request)
+  from=attested(KYC 지갑): REVERT Error(note commitment must be exactly 32 bytes: invalid request)
 
 4. withdraw(더미 proof, 더미 root, 더미 nullifier)
-  from=attested(은행 스키마): REVERT Error(withdraw amount string is invalid: invalid request)
+  from=attested(KYC 지갑): REVERT Error(withdraw amount string is invalid: invalid request)
   from=임의 주소(잔고 override): REVERT Error(withdraw amount string is invalid: invalid request)
 
 4b. withdraw amount 문자열 형식 변형
-  amount="1" from=attested(은행 스키마): REVERT Error(withdraw amount string is invalid: invalid request)
-  amount="1000000000000000000atokrw" from=attested(은행 스키마): REVERT Error(withdraw chain id mismatch: expected maroo-testnet-1, got 450815: invalid request)
-  amount="1atokrw" from=attested(은행 스키마): REVERT Error(withdraw chain id mismatch: expected maroo-testnet-1, got 450815: invalid request)
-  amount="1aokrw" from=attested(은행 스키마): REVERT Error(privacy precompile only supports native denom "atokrw", got "aokrw")
-  amount="1.0" from=attested(은행 스키마): REVERT Error(withdraw amount string is invalid: invalid request)
+  amount="1" from=attested(KYC 지갑): REVERT Error(withdraw amount string is invalid: invalid request)
+  amount="1000000000000000000atokrw" from=attested(KYC 지갑): REVERT Error(withdraw chain id mismatch: expected maroo-testnet-1, got 450815: invalid request)
+  amount="1atokrw" from=attested(KYC 지갑): REVERT Error(withdraw chain id mismatch: expected maroo-testnet-1, got 450815: invalid request)
+  amount="1aokrw" from=attested(KYC 지갑): REVERT Error(privacy precompile only supports native denom "atokrw", got "aokrw")
+  amount="1.0" from=attested(KYC 지갑): REVERT Error(withdraw amount string is invalid: invalid request)
+
+4c. 같은 withdraw를 attestation 없는 임의 주소로. 정책 층이 먼저 막는가
+  amount="1atokrw" from=임의 주소(잔고 override): REVERT Error(no EAS attestation received for sender (index returned empty): maroo1g8qw4lcezahpenrl4tcrlwvfwvkqv4xevf0wud)
+
+4d. chainId 문자열 변형. 문서 Network ID 값과 실제 Cosmos chain-id
+  chainId="maroo-testnet" from=attested(KYC 지갑): REVERT Error(withdraw chain id mismatch: expected maroo-testnet-1, got maroo-testnet: invalid request)
+  chainId="maroo-testnet-1" from=attested(KYC 지갑): REVERT Error(withdraw root was not found in the historical merkle roots: invalid request)
 
 5. 메서드 목록 (ABI 0.0.8)
   batchTransfer, batchTransferWithAuthorization, deposit, singleProofBatchTransfer, singleProofBatchTransferWithAuthorization, transfer, transferWithAuthorization, withdraw, withdrawWithAuthorization
+
+요약. Privacy 프리컴파일은 어디서 막는가 (전부 eth_call, 상태 변경 없음)
+  1. 정책 층    attestation 없는 주소            → Error(no EAS attestation received for sender (index returned empty): maroo1g8qw4lcezahpenrl4tcrlwvfwvkqv4xevf0wud)
+  2. chain id   인증 지갑, EVM chainId "450815"  → Error(withdraw chain id mismatch: expected maroo-testnet-1, got 450815)
+                문서 Network ID "maroo-testnet"  → Error(withdraw chain id mismatch: expected maroo-testnet-1, got maroo-testnet)
+                실제 chain-id "maroo-testnet-1"   → Error(withdraw root was not found in the historical merkle roots)
+  3. 증명 재료  형식 맞춘 더미 deposit           → 2b 참조. 암호화 노트 봉투 검사에서 거절. prover 미공개로 여기서 멈춤
+  덤. denom     문서 표기 "aokrw"                → Error(privacy precompile only supports native denom "atokrw", got "aokrw")
