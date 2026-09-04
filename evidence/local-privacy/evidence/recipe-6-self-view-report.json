@@ -1,0 +1,46 @@
+{
+  "tx_hash": "B64462562934EDA28E733CC65868C273F194898CE964636E9718597DAA2F1C1D",
+  "key": "alice",
+  "outputs": [
+    {
+      "output_index": 0,
+      "plane": "self-view",
+      "status": "Verified",
+      "amount": "4",
+      "sender": "clairs1t4kcjd0s4qmvenattlphcsmtgn3q4hhq4l6dwwgrguw3njqzc5nw3whzx28gg7des8u2xm940ap2meh4mgp88v272cktuu828rquy2sff86x5",
+      "recipient": "clairs1lu65xvvhuh4qa28v6zqxd22rvrq3435urvpjee7jrtj5ypgcvjqqfszt4sd9psjyhtmk0c62qzkcg9ah2j60dt3vd645v0cedgg8g8gzlcnfw",
+      "policy": 4294967295,
+      "disclosed_field_bitmap": 7
+    },
+    {
+      "output_index": 1,
+      "plane": "self-view",
+      "status": "Verified",
+      "amount": "5",
+      "sender": "clairs1t4kcjd0s4qmvenattlphcsmtgn3q4hhq4l6dwwgrguw3njqzc5nw3whzx28gg7des8u2xm940ap2meh4mgp88v272cktuu828rquy2sff86x5",
+      "recipient": "clairs1yrn7698q4xtttg46ptylmmjg4ajk0d52t0x7l0lvgw0n5pe2vztqzn8w93uh0vesed7rcuqjl8udnm70ef4msxm5fl0l0s4adjruegq6taanl",
+      "policy": 4294967295,
+      "disclosed_field_bitmap": 7
+    },
+    {
+      "output_index": 2,
+      "plane": "self-view",
+      "status": "Verified",
+      "amount": "6",
+      "sender": "clairs1t4kcjd0s4qmvenattlphcsmtgn3q4hhq4l6dwwgrguw3njqzc5nw3whzx28gg7des8u2xm940ap2meh4mgp88v272cktuu828rquy2sff86x5",
+      "recipient": "clairs1scc3z5pjxu0t0ncr7ydq4mdkygq6nharknqprkcsmea4h3ndl6k8sryjgke07cueyzr4z5dkxg08azumgd784f3rygse7xmscuav7tg0u92qp",
+      "policy": 4294967295,
+      "disclosed_field_bitmap": 7
+    },
+    {
+      "output_index": 3,
+      "plane": "self-view",
+      "status": "Verified",
+      "amount": "5",
+      "sender": "clairs1t4kcjd0s4qmvenattlphcsmtgn3q4hhq4l6dwwgrguw3njqzc5nw3whzx28gg7des8u2xm940ap2meh4mgp88v272cktuu828rquy2sff86x5",
+      "recipient": "clairs1t4kcjd0s4qmvenattlphcsmtgn3q4hhq4l6dwwgrguw3njqzc5nw3whzx28gg7des8u2xm940ap2meh4mgp88v272cktuu828rquy2sff86x5",
+      "policy": 4294967295,
+      "disclosed_field_bitmap": 7
+    }
+  ]
+}

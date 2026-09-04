@@ -1,0 +1,9 @@
+{
+  "payload_hash": "f91d8680933ba21d0a89a9ef4ed1a202a9c972d6c4fa3674f8bb84753b86046d",
+  "txhash": "B64462562934EDA28E733CC65868C273F194898CE964636E9718597DAA2F1C1D",
+  "input_count": 1,
+  "output_count": 4,
+  "prepared_file": "/Users/ihojae/my-project2/maroo-institutional-integration-guide/recipe/03-privacy-local/out/2-batch-prepared.json",
+  "proof_file": "/Users/ihojae/my-project2/maroo-institutional-integration-guide/recipe/03-privacy-local/out/2-batch-proof.json",
+  "prover": "local"
+}
