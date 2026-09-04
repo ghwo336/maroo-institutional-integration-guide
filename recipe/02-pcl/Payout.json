@@ -1,0 +1,56 @@
+{
+ "abi": [
+  {
+   "anonymous": false,
+   "inputs": [
+    {
+     "indexed": true,
+     "internalType": "address",
+     "name": "from",
+     "type": "address"
+    },
+    {
+     "indexed": true,
+     "internalType": "address",
+     "name": "to",
+     "type": "address"
+    },
+    {
+     "indexed": false,
+     "internalType": "uint256",
+     "name": "amount",
+     "type": "uint256"
+    }
+   ],
+   "name": "Paid",
+   "type": "event"
+  },
+  {
+   "inputs": [
+    {
+     "internalType": "address payable",
+     "name": "to",
+     "type": "address"
+    }
+   ],
+   "name": "pay",
+   "outputs": [],
+   "stateMutability": "payable",
+   "type": "function"
+  },
+  {
+   "inputs": [],
+   "name": "version",
+   "outputs": [
+    {
+     "internalType": "string",
+     "name": "",
+     "type": "string"
+    }
+   ],
+   "stateMutability": "pure",
+   "type": "function"
+  }
+ ],
+ "bytecode": "0x6080604052348015600e575f5ffd5b506101ed8061001c5f395ff3fe608060405260043610610028575f3560e01c80630c11dedd1461002c57806354fd4d5014610041575b5f5ffd5b61003f61003a366004610155565b610080565b005b34801561004c575f5ffd5b5060408051808201825260088152677061796f75742d3160c01b602082015290516100779190610182565b60405180910390f35b5f816001600160a01b0316346040515f6040518083038185875af1925050503d805f81146100c9576040519150601f19603f3d011682016040523d82523d5f602084013e6100ce565b606091505b50509050806101115760405162461bcd60e51b815260206004820152600b60248201526a1cd95b990819985a5b195960aa1b604482015260640160405180910390fd5b6040513481526001600160a01b0383169033907f9def4e2802183d68ce90a6a226a2962b59298616c27165f12c4fbc5c84cdd7789060200160405180910390a35050565b5f60208284031215610165575f5ffd5b81356001600160a01b038116811461017b575f5ffd5b9392505050565b602081525f82518060208401528060208501604085015e5f604082850101526040601f19601f8301168401019150509291505056fea2646970667358221220487a15473635bcfada5a5bf3acfd5c60c3cca971806cae5b406361b2f8688b7e64736f6c634300081c0033"
+}

@@ -1,0 +1,18 @@
+diff --git a/x/privacy/keeper/path_snapshot.go b/x/privacy/keeper/path_snapshot.go
+index ca5223a..0698910 100644
+--- a/x/privacy/keeper/path_snapshot.go
++++ b/x/privacy/keeper/path_snapshot.go
+@@ -172,9 +172,11 @@ func (k Keeper) SetMerkleRootSnapshotV1(ctx sdk.Context, snapshot *types.MerkleR
+ 		if err := current.Unmarshal(existing); err != nil {
+ 			return fmt.Errorf("stored merkle root snapshot is corrupt: %w", err)
+ 		}
+-		if current.LeafCount != copySnapshot.LeafCount || current.Height != copySnapshot.Height || !bytes.Equal(current.Root, copySnapshot.Root) {
++		if current.LeafCount != copySnapshot.LeafCount || !bytes.Equal(current.Root, copySnapshot.Root) {
+ 			return fmt.Errorf("merkle root snapshot re-registration is inconsistent")
+ 		}
+-		return setHistoricalRootHeightMetadata(store, canonicalRoot, copySnapshot.Height)
++		// A withdraw changes no commitment and therefore keeps the current root.
++		// Preserve the height at which that immutable root snapshot was created.
++		return setHistoricalRootHeightMetadata(store, canonicalRoot, current.Height)
+ 	}
+ 	encoded, err := copySnapshot.Marshal()

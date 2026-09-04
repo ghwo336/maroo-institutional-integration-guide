@@ -1,3 +1,5 @@
 reference/
 CLAUDE.md
 evidence/testnet-pcl/node_modules
+recipe/node_modules
+recipe/03-privacy-local/out/
