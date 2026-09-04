@@ -76,12 +76,22 @@ console.log("\n4d. chainId 문자열 변형. 문서 Network ID 값과 실제 Cos
 r4b.docChain = await call(`chainId="maroo-testnet" from=attested(KYC 지갑)`, { from: ATTESTED_BANK_SCHEMA, to: PRIVACY, data: wd("1atokrw", "maroo-testnet", ATTESTED_BANK_SCHEMA) });
 r4b.realChain = await call(`chainId="maroo-testnet-1" from=attested(KYC 지갑)`, { from: ATTESTED_BANK_SCHEMA, to: PRIVACY, data: wd("1atokrw", "maroo-testnet-1", ATTESTED_BANK_SCHEMA) });
 
+// 4e. 은행 스키마(bool kycVerified, 0xc74e…)만 있는 지갑. 2026-09-05 step2.ts로 발급, kakaoIdHash는 없음
+const BANK_ONLY = "0x99DF6BD2225C9C29F38708b397B36F64CB2E3D66";
+const KSTOCK_PROXY = "0x5BCEc33cf3f6496dAF27956fd4C4f157ca0342E3"; // 0xc74e 스키마 EAS_POLICY가 바인딩된 실습 프록시
+console.log("\n4e. 은행 스키마 attestation만 있는 지갑. attestation이 있느냐가 아니라 어느 스키마냐를 보는가");
+const erc20 = new ethers.Interface(["function transfer(address,uint256) returns (bool)"]);
+r4b.bankProxy = await call(`KSTOCK 프록시(0xc74e 정책) transfer from=은행 스키마만`, { from: BANK_ONLY, to: KSTOCK_PROXY, data: erc20.encodeFunctionData("transfer", [BANK_ONLY, 0n]) });
+r4b.bankPrivacy = await call(`Privacy withdraw amount="1atokrw" from=은행 스키마만`, { from: BANK_ONLY, to: PRIVACY, data: wd("1atokrw", "maroo-testnet-1", BANK_ONLY) }, funded(BANK_ONLY));
+
 console.log("\n5. 메서드 목록 (ABI 0.0.8)");
 console.log("  " + iPrivacyAbi.filter((f) => f.type === "function").map((f) => f.name).join(", "));
 
 const trim = (s) => (s ?? "").replace(/^REVERT /, "").replace(/: invalid request\)$/, ")");
 console.log("\n요약. Privacy 프리컴파일은 어디서 막는가 (전부 eth_call, 상태 변경 없음)");
 console.log(`  1. 정책 층    attestation 없는 주소            → ${trim(r4b.rnd)}`);
+console.log(`                은행 스키마만 있는 주소, KSTOCK 프록시 → ${trim(r4b.bankProxy)}`);
+console.log(`                은행 스키마만 있는 주소, Privacy      → ${trim(r4b.bankPrivacy)}`);
 console.log(`  2. chain id   인증 지갑, EVM chainId "450815"  → ${trim(r4b["1atokrw"])}`);
 console.log(`                문서 Network ID "maroo-testnet"  → ${trim(r4b.docChain)}`);
 console.log(`                실제 chain-id "maroo-testnet-1"   → ${trim(r4b.realChain)}`);

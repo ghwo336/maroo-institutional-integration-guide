@@ -1,15 +1,15 @@
 # Privacy 프리컴파일 상태 변경 호출 시도 (테스트넷, 더미 인자)  date: 2026-09-04
-rpc: https://rpc-testnet.maroo.io  chainId: 450815  block: 17286881
+rpc: https://rpc-testnet.maroo.io  chainId: 450815  block: 17295994
 privacy: 0x100000000000000000000000000000000000000b  eth_getCode: 0x
 
 1. [대조군] 모르는 selector. 프리컴파일이면 revert로 답한다
   0xdeadbeef from=attested: REVERT Error(no method with id: 0xdeadbeef)
 
 2. deposit(더미 commitment, 더미 노트, 더미 proof) value=1 tOKRW
-  from=attested(KYC 지갑): REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
-  from=minter: REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
-  from=임의 주소(잔고 override): REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
-  from=attested(KYC 지갑): estimateGas REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
+  from=attested(KYC 지갑): REVERT Error(note commitment must be canonical 32-byte field bytes: invalid request)
+  from=minter: REVERT Error(note commitment must be canonical 32-byte field bytes: invalid request)
+  from=임의 주소(잔고 override): REVERT Error(note commitment must be canonical 32-byte field bytes: invalid request)
+  from=attested(KYC 지갑): estimateGas REVERT Error(note commitment must be canonical 32-byte field bytes: invalid request)
 
 2b. deposit(canonical commitment 0x00…01, 더미 노트, 더미 proof) value=1 tOKRW. 입력 검증을 지나면 어느 단계가 거절하는가
   from=attested(KYC 지갑): REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
@@ -32,19 +32,33 @@ privacy: 0x100000000000000000000000000000000000000b  eth_getCode: 0x
   amount="1.0" from=attested(KYC 지갑): REVERT Error(withdraw amount string is invalid: invalid request)
 
 4c. 같은 withdraw를 attestation 없는 임의 주소로. 정책 층이 먼저 막는가
-  amount="1atokrw" from=임의 주소(잔고 override): REVERT Error(no EAS attestation received for sender (index returned empty): maroo1g8qw4lcezahpenrl4tcrlwvfwvkqv4xevf0wud)
+  amount="1atokrw" from=임의 주소(잔고 override): REVERT Error(no EAS attestation received for sender (index returned empty): maroo1rm6qs405qxxygg26mwhrjxgk85wp37yt3dcj8a)
 
 4d. chainId 문자열 변형. 문서 Network ID 값과 실제 Cosmos chain-id
   chainId="maroo-testnet" from=attested(KYC 지갑): REVERT Error(withdraw chain id mismatch: expected maroo-testnet-1, got maroo-testnet: invalid request)
   chainId="maroo-testnet-1" from=attested(KYC 지갑): REVERT Error(withdraw root was not found in the historical merkle roots: invalid request)
 
+4e. 은행 스키마 attestation만 있는 지갑. attestation이 있느냐가 아니라 어느 스키마냐를 보는가
+  KSTOCK 프록시(0xc74e 정책) transfer from=은행 스키마만: OK return=0x0000000000000000000000000000000000000000000000000000000000000001
+  Privacy withdraw amount="1atokrw" from=은행 스키마만: REVERT Error(no EAS attestation received for sender (index returned empty): maroo1n80kh53ztjwznuu8pzee0vm0vn9ju0tx48m3qx)
+
 5. 메서드 목록 (ABI 0.0.8)
   batchTransfer, batchTransferWithAuthorization, deposit, singleProofBatchTransfer, singleProofBatchTransferWithAuthorization, transfer, transferWithAuthorization, withdraw, withdrawWithAuthorization
 
 요약. Privacy 프리컴파일은 어디서 막는가 (전부 eth_call, 상태 변경 없음)
-  1. 정책 층    attestation 없는 주소            → Error(no EAS attestation received for sender (index returned empty): maroo1g8qw4lcezahpenrl4tcrlwvfwvkqv4xevf0wud)
+  1. 정책 층    attestation 없는 주소            → Error(no EAS attestation received for sender (index returned empty): maroo1rm6qs405qxxygg26mwhrjxgk85wp37yt3dcj8a)
+                은행 스키마만 있는 주소, KSTOCK 프록시 → OK return=0x0000000000000000000000000000000000000000000000000000000000000001
+                은행 스키마만 있는 주소, Privacy      → Error(no EAS attestation received for sender (index returned empty): maroo1n80kh53ztjwznuu8pzee0vm0vn9ju0tx48m3qx)
   2. chain id   인증 지갑, EVM chainId "450815"  → Error(withdraw chain id mismatch: expected maroo-testnet-1, got 450815)
                 문서 Network ID "maroo-testnet"  → Error(withdraw chain id mismatch: expected maroo-testnet-1, got maroo-testnet)
                 실제 chain-id "maroo-testnet-1"   → Error(withdraw root was not found in the historical merkle roots)
   3. 증명 재료  형식 맞춘 더미 deposit           → 2b 참조. 암호화 노트 봉투 검사에서 거절. prover 미공개로 여기서 멈춤
   덤. denom     문서 표기 "aokrw"                → Error(privacy precompile only supports native denom "atokrw", got "aokrw")
+
+4e 준비 기록 (2026-09-05)
+  은행 스키마(bool kycVerified, 0xc74ecef5…41a63) attestation을 새 주소 0x99DF6BD2225C9C29F38708b397B36F64CB2E3D66에 발급.
+  issuer 0x552B9F6BA65DE19D93F568DEF894d5Efdc1E6866 (8월 실습에서 스키마를 등록한 지갑)
+  attest tx 0xc4a160eb3742da5e8fc92196c54b1bbacdad607b50acf2df894f5e1b9513ad7f
+  attestationUID 0x31b95417ac6210c8789a51fd67e957f1b95b1092f70406cd5ccf9dfd83da6a70
+  index tx 0xeb8a73f8bd6d3a5d6bb70bdfb18ec21099fa664c4dbffcb4d0d3300864c7a414
+  이 주소는 kakaoIdHash 스키마 attestation이 없다. 발급 스크립트는 maru-practice/attest-bank-only.mjs (eas-sdk의 lodash ESM import가 Node 24에서 실패해 ethers만으로 작성)
