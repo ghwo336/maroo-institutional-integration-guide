@@ -1,0 +1,49 @@
+# @maroo-chain/viem 0.3.0 타입 정의(dist/index.d.mts) 발췌. 수집 2026-09-04 02:04 KST. tarball은 maroo-viem-0.3.0-revert-map.txt의 sha256과 동일
+# README 6행: The package targets Maroo `v0.8.0` and requires Node.js 20 or newer.
+# package.json dependencies: {'@maroo-chain/contracts': '0.0.8', 'abitype': '^1.0.0'}
+
+## @deprecated 네 곳 (행 번호는 index.d.mts 기준)
+549-/**
+550: * @deprecated This fused template is slated for removal from core. Prefer
+551- * composing `VOLUME_POLICY` and `EAS_POLICY`. Decode and encode remain
+552- * supported for existing policy state.
+553- */
+554-declare function create(input: PolicySetInput<'OKRW_EAS_TRANSFER_LIMIT_POLICY'>): DecodedPolicySet<'OKRW_EAS_TRANSFER_LIMIT_POLICY'>;
+555-/**
+556: * @deprecated This fused template is slated for removal from core. Prefer
+557- * composing `PERIODIC_VOLUME_POLICY` and `EAS_POLICY`. Decode and encode
+558- * remain supported for existing policy state.
+559- */
+560-declare function create(input: PolicySetInput<'OKRW_EAS_PERIODIC_VOLUME_LIMIT_POLICY'>): DecodedPolicySet<'OKRW_EAS_PERIODIC_VOLUME_LIMIT_POLICY'>;
+--
+596-  /**
+597:   * @deprecated This fused template is slated for removal from core. Prefer
+598-   * `policy.or(policy.volume(...), policy.eas(...))` for new policies. Once
+599-   * core removes it, the SDK will retain only decode/encode support for
+600-   * existing policy state.
+601-   */
+--
+605-  /**
+606:   * @deprecated This fused template is slated for removal from core. Prefer
+607-   * `policy.or(policy.periodicVolume(...), policy.eas(...))` for new policies.
+608-   * Once core removes it, the SDK will retain only decode/encode support for
+609-   * existing policy state.
+610-   */
+
+## Privacy 노출 범위
+import { iPrivacyAbi as privacy$2 } from "@maroo-chain/contracts/abi/precompiles/privacy/IPrivacy";
+/** Clairveil shielded pool; this SDK intentionally exposes only its address. */
+declare const privacy$1: "0x100000000000000000000000000000000000000b";
+
+## Selectors.privacy
+declare const privacy: {
+  readonly batchTransfer: "0x9750e2e0";
+  readonly batchTransferWithAuthorization: "0x1252f954";
+  readonly deposit: "0xe6eb7771";
+  readonly singleProofBatchTransfer: "0x3bbb329b";
+  readonly singleProofBatchTransferWithAuthorization: "0x0272cf35";
+  readonly transfer: "0x43fd6967";
+  readonly transferWithAuthorization: "0x8ad7ab1c";
+  readonly withdraw: "0xce4f349c";
+  readonly withdrawWithAuthorization: "0xb680b59a";
+};

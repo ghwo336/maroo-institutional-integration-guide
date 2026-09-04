@@ -1,0 +1,35 @@
+# Privacy 프리컴파일 상태 변경 호출 시도 (테스트넷, 더미 인자)  date: 2026-09-04
+rpc: https://rpc-testnet.maroo.io  chainId: 450815  block: 17261033
+privacy: 0x100000000000000000000000000000000000000b  eth_getCode: 0x
+
+1. [대조군] 모르는 selector. 프리컴파일이면 revert로 답한다
+  0xdeadbeef from=attested: REVERT Error(no method with id: 0xdeadbeef)
+
+2. deposit(더미 commitment, 더미 노트, 더미 proof) value=1 tOKRW
+  from=attested(은행 스키마): REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
+  from=minter: REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
+  from=임의 주소(잔고 override): REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
+  from=attested(은행 스키마): estimateGas REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
+
+2b. deposit(canonical commitment 0x00…01, 더미 노트, 더미 proof) value=1 tOKRW. 입력 검증을 지나면 어느 단계가 거절하는가
+  from=attested(은행 스키마): REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
+  from=임의 주소(잔고 override): REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
+  from=임의 주소, value=0: REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
+  from=attested(은행 스키마): estimateGas REVERT Error(encrypted note is not a canonical deposit-note envelope: invalid encrypted envelope domain tag: invalid request)
+
+3. deposit 인자 비움 (commitment, 노트, proof 모두 0x)
+  from=attested(은행 스키마): REVERT Error(note commitment must be exactly 32 bytes: invalid request)
+
+4. withdraw(더미 proof, 더미 root, 더미 nullifier)
+  from=attested(은행 스키마): REVERT Error(withdraw amount string is invalid: invalid request)
+  from=임의 주소(잔고 override): REVERT Error(withdraw amount string is invalid: invalid request)
+
+4b. withdraw amount 문자열 형식 변형
+  amount="1" from=attested(은행 스키마): REVERT Error(withdraw amount string is invalid: invalid request)
+  amount="1000000000000000000atokrw" from=attested(은행 스키마): REVERT Error(withdraw chain id mismatch: expected maroo-testnet-1, got 450815: invalid request)
+  amount="1atokrw" from=attested(은행 스키마): REVERT Error(withdraw chain id mismatch: expected maroo-testnet-1, got 450815: invalid request)
+  amount="1aokrw" from=attested(은행 스키마): REVERT Error(privacy precompile only supports native denom "atokrw", got "aokrw")
+  amount="1.0" from=attested(은행 스키마): REVERT Error(withdraw amount string is invalid: invalid request)
+
+5. 메서드 목록 (ABI 0.0.8)
+  batchTransfer, batchTransferWithAuthorization, deposit, singleProofBatchTransfer, singleProofBatchTransferWithAuthorization, transfer, transferWithAuthorization, withdraw, withdrawWithAuthorization

@@ -1,0 +1,77 @@
+# @maroo-chain/viem 0.3.0 PclRevert 디코더의 에러 이름 → 정책 위반 분류 매핑. 수집 2026-09-04 01:16 KST
+# 명령: npm pack @maroo-chain/viem@0.3.0 && tar xzf maroo-chain-viem-0.3.0.tgz
+# tarball sha256: 2d5597ed72c78d8d83956b6328d92722c9ded49eb17b8699f8e169a1226e7697
+# 원본 파일: package/dist/revokeFeedback-C6XIWV7C.mjs (attestationReasons, toPolicyViolation 발췌, 수정 없음)
+#
+# 요약: ReachedLimitOfNonEAS → non-eas-limit, ExceededAgentTransferLimit → agent-transfer-limit,
+#       VolumeAboveMaxLimit → volume-above-max, ExceededPeriodicVolume → periodic-volume,
+#       EasNoAttestationReceived 등 5개 → attestation(reason). 어느 템플릿이 어느 에러를 내는지는 SDK가 말하지 않는다.
+
+const attestationReasons = {
+	EasAttestationRequired: "required",
+	EasNoAttestationReceived: "none-received",
+	EasAttestationLookupFailed: "lookup-failed",
+	EasAttestationRevoked: "revoked",
+	EasAttestationExpired: "expired"
+};
+const toPolicyViolation = (value) => {
+	if (value.kind === "opaque") return null;
+	const args = value.args;
+	switch (value.errorName) {
+		case "InDenylist": return {
+			kind: "denylist",
+			sender: args[0]
+		};
+		case "VolumeBelowMinLimit": return {
+			kind: "volume-below-min",
+			minLimit: args[0],
+			value: args[1]
+		};
+		case "VolumeAboveMaxLimit": return {
+			kind: "volume-above-max",
+			maxLimit: args[0],
+			value: args[1]
+		};
+		case "ExceededPeriodicVolume": return {
+			kind: "periodic-volume",
+			maxAmount: args[0],
+			value: args[1],
+			resetAt: args[2]
+		};
+		case "ReachedLimitOfNonEAS": return {
+			kind: "non-eas-limit",
+			maxLimit: args[0],
+			value: args[1]
+		};
+		case "AgentKeeperRequired": return { kind: "agent-keeper-required" };
+		case "ExceededAgentTransferLimit": return {
+			kind: "agent-transfer-limit",
+			maxLimit: args[0],
+			value: args[1]
+		};
+		case "AgentTransferLimitMetadataInvalid": return {
+			kind: "agent-transfer-limit-metadata-invalid",
+			reason: args[0]
+		};
+		case "AnyOfRejected": {
+			const children = [];
+			for (const child of value.args[0]) {
+				const violation = toPolicyViolation(child);
+				if (!violation) return null;
+				children.push(violation);
+			}
+			return {
+				kind: "any-of-rejected",
+				children
+			};
+		}
+		default: {
+			const reason = attestationReasons[value.errorName];
+			return reason ? {
+				kind: "attestation",
+				reason,
+				sender: args[0]
+			} : null;
+		}
+	}
+};

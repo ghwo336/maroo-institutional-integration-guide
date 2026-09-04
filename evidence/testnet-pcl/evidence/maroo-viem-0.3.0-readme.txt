@@ -1,0 +1,257 @@
+# @maroo-chain/viem 0.3.0 npm 레지스트리 기록. 수집 2026-09-04 00:21 KST
+# 명령: npm view @maroo-chain/viem version time dist.tarball; npm view @maroo-chain/viem readme
+
+version = '0.3.0'
+time = {
+  created: '2026-08-14T09:54:44.761Z',
+  modified: '2026-09-01T11:15:21.645Z',
+  '0.0.0': '2026-08-14T09:54:45.074Z',
+  '0.1.0': '2026-08-26T02:35:41.663Z',
+  '0.2.0': '2026-09-01T08:58:42.676Z',
+  '0.3.0': '2026-09-01T11:15:21.472Z'
+}
+dist.tarball = 'https://registry.npmjs.org/@maroo-chain/viem/-/viem-0.3.0.tgz'
+
+## README (npm view readme 원문)
+
+# @maroo-chain/viem
+
+Viem integration for the Maroo chain. It provides the chain definition, typed
+client actions, PCL policy tools, and protocol metadata.
+
+The package targets Maroo `v0.8.0` and requires Node.js 20 or newer.
+
+## Install
+
+```bash
+npm install @maroo-chain/viem viem
+```
+
+## Create clients
+
+Extend standard viem clients with Maroo actions:
+
+```ts
+import { createPublicClient, createWalletClient, http } from 'viem'
+import {
+  marooPublicActions,
+  marooTestnet,
+  marooWalletActions,
+} from '@maroo-chain/viem'
+
+const publicClient = createPublicClient({
+  chain: marooTestnet,
+  transport: http(),
+}).extend(marooPublicActions())
+
+const walletClient = createWalletClient({
+  account,
+  chain: marooTestnet,
+  transport: http(),
+}).extend(marooWalletActions())
+```
+
+Maroo services are exposed as namespaces:
+
+```ts
+const pclParams = await publicClient.pcl.getParams()
+const okrwParams = await publicClient.okrw.getParams()
+const easParams = await publicClient.eas.getParams()
+
+const [agentIds] = await publicClient.agent.getAgentIds({
+  args: [owner, { key: '0x', offset: 0n, limit: 10n, countTotal: false, reverse: false }],
+})
+
+await publicClient.identity.getVersion()
+await publicClient.reputation.getVersion()
+```
+
+Address overrides follow the target being replaced: fixed `agent`, `eas`, and
+`okrw` precompile actions use `address`; PCL actions use `pclAddress`; and
+`identity`/`reputation` actions use `address` for their resolved registry
+contract.
+
+## Use PCL
+
+Contract-scoped policies are enforced when users call a contract through a PCL
+proxy.
+
+### Deploy a proxy
+
+```ts
+import { pclProxyKinds } from '@maroo-chain/viem'
+
+const hash = await walletClient.pcl.deployPclProxy({
+  kind: pclProxyKinds.Transparent,
+  logic,
+  initialOwner: account.address,
+  initializer,
+})
+
+const receipt = await publicClient.waitForTransactionReceipt({ hash })
+const event = walletClient.pcl.deployPclProxy.extractEvent(receipt.logs)
+const proxy = event.args.proxy
+```
+
+### Set policies
+
+`policy.*` builds wire-ready policy sets for ordinary scripts and contract
+writes:
+
+```ts
+import { parseEther } from 'viem'
+import { policy } from '@maroo-chain/viem'
+
+const { eas, indexer } = await publicClient.eas.getParams()
+
+const policies = [
+  policy.or(
+    policy.periodicVolume({
+      limits: [{
+        token: 'atokrw',
+        maxAmount: parseEther('2000000'),
+        resetPeriodSeconds: 86_400n,
+      }],
+    }),
+    policy.eas({
+      easContract: eas,
+      indexContract: indexer,
+      schemaUid,
+    }),
+  ),
+]
+
+await walletClient.pcl.changeContractPolicies({
+  contract: proxy,
+  admin: account.address,
+  policies,
+})
+```
+
+Use `PolicySet` when an editor needs a decoded, editable policy model:
+
+```ts
+import { PolicySet } from '@maroo-chain/viem'
+
+const { policies } = await publicClient.pcl.globalPolicies()
+const editable = policies.map(PolicySet.decode)
+const encoded = editable.map((value) => PolicySet.encode(value, { strict: true }))
+```
+
+`PolicySet.create(input)` creates a validated semantic policy directly.
+`PolicySet.encode(value)` preserves decoded wire state for round trips; pass
+`{ strict: true }` at an authoring boundary to reject opaque or chain-invalid
+policy trees.
+`policy.*` is the concise `create` + `encode` path.
+
+The fused OKRW/EAS templates are deprecated but remain supported while Maroo
+core supports them. Prefer composable policies for new code.
+
+### Simulate a call
+
+Classify the result of a proxy call before sending a transaction:
+
+```ts
+const result = await publicClient.pcl.simulatePclProxy({
+  account: user,
+  address: proxy,
+  abi,
+  functionName: 'transfer',
+  args,
+})
+
+if (result.status === 'policy-rejected') console.log(result.violation)
+if (result.status === 'execution-reverted') console.error(result.error)
+```
+
+### Decode PCL reverts
+
+```ts
+import { PclRevert } from '@maroo-chain/viem'
+
+try {
+  await walletClient.writeContract({
+    address: proxy,
+    abi,
+    functionName: 'transfer',
+    args,
+  })
+} catch (error) {
+  const revert = PclRevert.decode(error)
+  const violation = revert && PclRevert.toPolicyViolation(revert)
+  if (violation) console.log(violation)
+}
+```
+
+Invalid policy authoring input throws `PolicyCodecError`. Policy rejections are
+projected as `PolicyViolation` values. Other PCL custom errors remain available
+as ABI-shaped `PclRevert` values.
+
+When only the custom-error identity is needed, `identify` accepts either the
+4-byte selector, a full revert payload, or a viem error:
+
+```ts
+PclRevert.identify('0xc755bafa')
+// { selector: '0xc755bafa', errorName: 'ReachedLimitOfNonEAS' }
+
+PclRevert.selector('ReachedLimitOfNonEAS')
+// '0xc755bafa'
+```
+
+## Standalone actions and multicall
+
+Use the `/actions` entry when extending a client is not desirable:
+
+```ts
+import { pcl } from '@maroo-chain/viem/actions'
+
+const policyState = await pcl.contractPolicies(publicClient, {
+  contract: contractAddress,
+})
+```
+
+Precompile reads expose `.call()` descriptors on decorated clients:
+
+```ts
+const results = await publicClient.multicall({
+  contracts: addresses.map((address) =>
+    publicClient.pcl.contractPolicies.call({ contract: address })),
+  allowFailure: false,
+})
+```
+
+Decorated `identity` and `reputation` reads resolve their registry address
+lazily and therefore do not expose `.call()`. Their standalone `/actions`
+counterparts do, with an explicit `address`.
+
+The chain definition is also available from a dedicated entry:
+
+```ts
+import { marooTestnet } from '@maroo-chain/viem/chains'
+```
+
+## Protocol metadata
+
+```ts
+import { Abis, Addresses, Selectors, marooTestnet } from '@maroo-chain/viem'
+
+Abis.pcl
+Addresses.pcl
+Selectors.pcl.deployPclProxy
+marooTestnet.contracts.multicall3.address
+```
+
+`Selectors` contains function selectors. Use `PclRevert.selector` for PCL
+custom-error selectors and derive event topics from `Abis`. Network-specific
+deployments belong to `chain.contracts`.
+
+## Development
+
+See the repository [contributing guide](https://github.com/Hashed-Open-Finance/maroo-typescript-sdk/blob/main/CONTRIBUTING.md)
+for setup and test instructions.
+
+## License
+
+Licensed under the [Apache License 2.0](LICENSE).
+
+Copyright 2026 Hashed Open Finance.

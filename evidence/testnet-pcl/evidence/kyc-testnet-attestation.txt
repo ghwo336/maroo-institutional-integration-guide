@@ -1,0 +1,18 @@
+# kyc-testnet.maroo.io에서 발급된 kakaoIdHash attestation 확인 (테스트넷, 읽기 전용)  date: 2026-09-04
+# 절차: https://kyc-testnet.maroo.io 에서 MetaMask 지갑 0x552B…6866 연결, 서명, 카카오로 인증하기 클릭. 페이지가 인증 완료로 바뀜.
+# 문서 근거: resources/network/testnet-access 표에 KYC (mock) https://kyc-testnet.maroo.io 한 줄. 스키마, 전역 정책, Privacy 주소 정책과의 연결 설명은 없음.
+# 조회: Indexer 0x…0008 getReceivedAttestationUIDCount / getReceivedAttestationUIDs, EAS 0x…0007 getAttestation (ethers v6, eth_call)
+
+block 17260988  2026-09-04T05:59:04Z (14:59 KST)
+
+0x552B9F6BA65DE19D93F568DEF894d5Efdc1E6866 (프록시 admin, KYC 페이지에서 인증 완료)
+  kakaoIdHash 스키마 0x3e448d939524a8f3e6a403502e57ce60ee10146292114a58f4bfd1b1d35f527d: 1건
+  은행 스키마 0xc74ecef5301b91fbff53451f7e66cafd41871e4f02e3c38766b9d8139f641a63: 1건
+  uid        0x0167e300d6058f860412ca2dfcec3a6423bc9d08ef7a2a99d1150aac44f8428d
+  attester   0xBfa4d8140b4104cA0Dd8c4E4b8cA420D551c0aE3
+  time       2026-09-04T05:57:46Z (14:57:46 KST. 2026-09-03 검증 시점에는 없었음. privacy-deposit-probe.txt 4b, pcl-readonly-probe.txt 3번은 그 시점 기준)
+  expires 0  revoked 0
+  data       0x9a4803e025b61ff3dcd7a28c5a0d7acde2eb75cd96119a102039fe6d76107b46 (kakaoIdHash) 0000…0001 (version 1)
+
+0xE9248D70055925e42957Dcdf1A42c7E856cc6aFB (대조군, 미인증)
+  kakaoIdHash: 0건  은행 스키마: 0건

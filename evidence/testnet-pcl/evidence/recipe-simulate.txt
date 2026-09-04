@@ -1,0 +1,9 @@
+proxy: 0x5BCEc33cf3f6496dAF27956fd4C4f157ca0342E3  call: transfer  value: 0.0 tOKRW
+
+  from=0x552B9F6BA65DE19D93F568DEF894d5Efdc1E6866: OK
+  from=attestation 없는 임의 주소: REVERT EasNoAttestationReceived(0x239c1Bd45400e68A94F61F26D330E1F10Da250AA)
+  from 생략 (zero address로 평가됨): REVERT EasNoAttestationReceived(0x0000000000000000000000000000000000000000)
+
+  estimateGas from=0x552B9F6BA65DE19D93F568DEF894d5Efdc1E6866: 620950
+
+전역 정책은 eth_call이 평가하지 않는다. 한도는 read-policies.mjs 4번으로 따로 확인한다.

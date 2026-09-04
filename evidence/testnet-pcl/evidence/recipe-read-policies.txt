@@ -1,0 +1,33 @@
+rpc: https://rpc-testnet.maroo.io  chainId: 450815  block: 17197911
+
+1. 등록된 템플릿
+  EAS_POLICY: EAS policy
+  DENYLIST_POLICY: Denylist
+  VOLUME_POLICY: Volume policy
+  PERIODIC_VOLUME_POLICY: Periodic volume policy
+  OKRW_EAS_TRANSFER_LIMIT_POLICY: OKRW EAS transfer limit policy
+  OKRW_EAS_PERIODIC_VOLUME_LIMIT_POLICY: OKRW EAS periodic volume limit policy
+  LOGICAL_POLICY: Logical policy
+  FOR_EACH_POLICY: For each policy
+  AGENT_OKRW_TRANSFER_LIMIT_POLICY: Agent OKRW transfer limit policy
+
+2. 전역 정책. 모든 트랜잭션에 AnteHandler가 적용한다
+  [0]
+    FOR_EACH Every AgentOwners
+      OR
+        누적 atokrw max 10000000.0 tOKRW / 86400s (selector=모든 호출)
+        attestation 스키마 0x3e448d939524a8f3e6a403502e57ce60ee10146292114a58f4bfd1b1d35f527d (selector=모든 호출)
+  [1]
+    OR
+      단건 atokrw max 2000000.0 tOKRW (selector=모든 호출)
+      attestation 스키마 0x3e448d939524a8f3e6a403502e57ce60ee10146292114a58f4bfd1b1d35f527d (selector=모든 호출)
+      FOR_EACH Any AgentOwners
+        attestation 스키마 0x3e448d939524a8f3e6a403502e57ce60ee10146292114a58f4bfd1b1d35f527d (selector=모든 호출)
+
+3. Privacy 프리컴파일 주소에 붙은 컨트랙트 정책. admin이 마루 policyAdmin이라 은행은 못 바꾼다
+  admin: 0x58eC1E718ff15e5f34591747D47ADf5BccDA804F (policyAdmin: 0x58eC1E718ff15e5f34591747D47ADf5BccDA804F)
+    attestation 스키마 0x3e448d939524a8f3e6a403502e57ce60ee10146292114a58f4bfd1b1d35f527d (selector=모든 호출)
+    DENYLIST_POLICY [[]] (selector=모든 호출)
+
+4. 0x552B9F6BA65DE19D93F568DEF894d5Efdc1E6866의 남은 전역 누적 한도
+  사용 0.0 tOKRW / max 10000000.0 tOKRW, 리셋 2026-09-04T00:00:00.000Z

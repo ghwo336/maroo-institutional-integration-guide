@@ -1,0 +1,14 @@
+# Privacy 프리컴파일 주소에 바인딩된 PCL 컨트랙트 정책  date: 2026-09-03
+rpc: https://rpc-testnet.maroo.io  chainId: 450815  block: 17197461
+query: IPcl.contractPolicies(0x100000000000000000000000000000000000000b)
+
+contract: 0x100000000000000000000000000000000000000b
+admin: 0x58eC1E718ff15e5f34591747D47ADf5BccDA804F (= policyAdmin)
+- templateId: EAS_POLICY  selector: (없음, 모든 호출)
+  eas: 0x1000000000000000000000000000000000000007  indexer: 0x1000000000000000000000000000000000000008  schemaUid: 0x3e448d939524a8f3e6a403502e57ce60ee10146292114a58f4bfd1b1d35f527d
+- templateId: DENYLIST_POLICY  selector: (없음, 모든 호출)
+  policy bytes: 0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000000000000000000000000000
+
+pclProxy(0x100000000000000000000000000000000000000b).kind: 0 (프록시 아님. 정책 인지 래퍼가 직접 평가)
+
+해석: 테스트넷에서 Privacy 프리컴파일의 모든 호출은 전역 정책에 더해 이 두 정책을 받는다. EAS_POLICY는 selector 없이 바인딩되어 deposit, transfer, withdraw 전부에 kakaoIdHash 스키마 attestation을 요구한다. admin이 마루 policyAdmin이므로 은행은 이 정책을 바꿀 수 없다.
