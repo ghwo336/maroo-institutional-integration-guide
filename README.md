@@ -14,7 +14,7 @@ Hashed Open Finance, Maroo Network DevRel 과제 Track A(Explain) 제출물이�
 | ------------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Institutional Integration Guide | [docs/integration-guide.md](docs/integration-guide.md)                             | 문제, 세 primitive와 경계, 급여 지급 6단계, 데이터 가시성, 키와 서비스 책임, 실패 모드, Clairveil과 프로덕션 과제, 알려진 제약                              |
 | Runnable Integration Recipe     | [recipe/](recipe/README.md)                                                        | `01-okrw`(테스트넷 읽기와 전송), `02-pcl`(테스트넷 정책 읽기, 시뮬레이션, 급여 정책 배포 스크립트), `03-privacy-local`(로컬 Clairveil 급여 흐름 TypeScript) |
-| Technical Walkthrough Video     | `video/`                                                                           | 대본과 영상 링크. 녹화 후 여기에 링크를 적는다                                                                                                              |
+| Technical Walkthrough Video     | [youtu.be/ACoUWrFL74g](https://youtu.be/ACoUWrFL74g), [video/](video/README.md)     | 은행 시니어 엔지니어에게 하는 아키텍처 리뷰. 아키텍처, 급여 지급 과정, 로컬 Clairveil 실행 경로 순서                                                       |
 | Institutional FAQ               | [docs/faq.md](docs/faq.md)                                                         | prover privacy, 감사 가능성, 키 관리, PCL 연동, disclosure, 재시도, 업그레이드, 프로덕션 준비도 8개                                                         |
 | Documentation Improvement Notes | [docs/documentation-improvement-notes.md](docs/documentation-improvement-notes.md) | 심각도순 21건. 위치, 현상, 재현, 영향, 제안                                                                                                                 |
 | Submission Notes                | [SUBMISSION_NOTES.md](SUBMISSION_NOTES.md)                                         | 가정과 차이, 검증 기록, AI 사용, DX 피드백, 알려진 제약                                                                                                     |
@@ -52,7 +52,7 @@ node recipe/03-privacy-local/privacy-payroll.ts
 ## 환경
 
 - 마루 테스트넷 chainId 450815, RPC `https://rpc-testnet.maroo.io`, 익스플로러 `https://explorer-testnet.maroo.io`
-- Clairveil v0.4.0, commit `ca85b02`, Go 1.26.4
+- Clairveil v0.4.0, commit `ca85b02708fdd75259d4d2ee2d671c21198cec69`, Go 1.26.4
 - Node 24, ethers v6, `@maroo-chain/contracts` 0.0.8. 참고한 SDK `@maroo-chain/viem` 0.3.0
 - docs.maroo.io 146페이지를 2026년 9월 2일에 미러링해 기준으로 삼았다. 미러는 리포에 넣지 않았다
 - 상세는 [evidence/local-privacy/VERSIONS.md](evidence/local-privacy/VERSIONS.md)
